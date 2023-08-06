@@ -1,4 +1,4 @@
-package storage
+package ntp_time_provider
 
 // DefaultNtpServers 默认的NTP服务器，使用者可以在系统初始化的覆盖掉这个变量来设置默认的NTP服务器
 var DefaultNtpServers = []string{

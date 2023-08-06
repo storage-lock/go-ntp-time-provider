@@ -1,4 +1,4 @@
-package storage
+package ntp_time_provider
 
 // time provider
 const (
