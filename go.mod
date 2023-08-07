@@ -5,7 +5,7 @@ go 1.19
 require (
 	github.com/beevik/ntp v1.3.0
 	github.com/storage-lock/go-events v0.0.1
-	github.com/storage-lock/go-storage v0.0.1
+	github.com/storage-lock/go-storage v0.0.2
 	github.com/stretchr/testify v1.8.4
 )
 
