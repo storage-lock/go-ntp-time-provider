@@ -4,8 +4,8 @@ go 1.23
 
 require (
 	github.com/beevik/ntp v1.3.0
-	github.com/storage-lock/go-events v0.0.1
-	github.com/storage-lock/go-storage v0.0.2
+	github.com/storage-lock/go-events v0.0.3
+	github.com/storage-lock/go-storage v0.0.3
 	github.com/stretchr/testify v1.11.1
 )
 
@@ -22,7 +22,3 @@ require (
 	golang.org/x/sys v0.11.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
-
-replace github.com/storage-lock/go-storage => ../go-storage
-
-replace github.com/storage-lock/go-events => ../go-events
