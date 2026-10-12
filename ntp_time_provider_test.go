@@ -15,15 +15,19 @@ func TestNTPTimeProvider_GetTime(t *testing.T) {
 		fmt.Println(e.ToJsonString())
 	}))
 
-	for _, server := range DefaultNtpServers {
-		provider := NewNTPTimeProvider(e.Fork(), server)
-		time, err := provider.GetTime(context.Background())
-		assert.Nil(t, err)
-		assert.False(t, time.IsZero())
-		if err != nil {
-			fmt.Println(server)
-		}
-	}
+	// 默认列表里的公共 NTP 服务器不保证每一台当前都可达，逐个断言会让测试
+	// 取决于测试机器的网络。这里验证的是：至少有一台能给出时间，并且一台都
+	// 不可达时返回错误而不是零时间。
+	provider := NewNTPTimeProvider(e.Fork(), DefaultNtpServers...)
+	got, err := provider.GetTime(context.Background())
+	assert.NoError(t, err)
+	assert.False(t, got.IsZero())
+
+	dead := NewNTPTimeProvider(e.Fork(), "192.0.2.1")
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+	_, err = dead.GetTime(ctx)
+	assert.Error(t, err)
 }
 
 // TestNTPTimeProvider_GetTime_RespectsContextCancellation 验证漏洞修复：
