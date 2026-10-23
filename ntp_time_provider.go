@@ -57,9 +57,10 @@ func (x *NTPTimeProvider) GetTime(ctx context.Context) (time.Time, error) {
 		default:
 		}
 
+		query := queryTime
 		resultCh := make(chan ntpQueryResult, 1)
 		go func(server string) {
-			now, err := queryTime(server)
+			now, err := query(server)
 			resultCh <- ntpQueryResult{now: now, err: err}
 		}(server)
 

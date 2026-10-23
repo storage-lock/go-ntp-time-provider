@@ -3,6 +3,7 @@ package ntp_time_provider
 import (
 	"context"
 	"errors"
+	"sync"
 	"testing"
 	"time"
 
@@ -10,7 +11,7 @@ import (
 )
 
 func TestNTPProviderBranches(t *testing.T) {
-	old := DefaultNtpServers
+	old := GetDefaultNtpServers()
 	SetDefaultNtpServers([]string{"default.example"})
 	t.Cleanup(func() { SetDefaultNtpServers(old) })
 	provider := NewNTPTimeProvider(nil)
@@ -28,9 +29,12 @@ func TestNTPProviderBranches(t *testing.T) {
 	if provider.e != event {
 		t.Fatal("event")
 	}
-	calls := 0
+	var calls int
+	var callsMu sync.Mutex
 	queryTime = func(server string) (time.Time, error) {
+		callsMu.Lock()
 		calls++
+		callsMu.Unlock()
 		switch server {
 		case "bad.example":
 			return time.Time{}, errors.New("query failed")
@@ -41,8 +45,11 @@ func TestNTPProviderBranches(t *testing.T) {
 		}
 	}
 	got, err := provider.GetTime(context.Background())
-	if err != nil || got.Unix() != 100 || calls != 3 {
-		t.Fatalf("time=%v err=%v calls=%d", got, err, calls)
+	callsMu.Lock()
+	gotCalls := calls
+	callsMu.Unlock()
+	if err != nil || got.Unix() != 100 || gotCalls != 3 {
+		t.Fatalf("time=%v err=%v calls=%d", got, err, gotCalls)
 	}
 
 	queryTime = func(string) (time.Time, error) { return time.Time{}, errors.New("down") }
@@ -54,7 +61,9 @@ func TestNTPProviderBranches(t *testing.T) {
 	if _, err := provider.GetTime(canceled); err != context.Canceled {
 		t.Fatal(err)
 	}
+	queryDone := make(chan struct{})
 	queryTime = func(string) (time.Time, error) {
+		defer close(queryDone)
 		time.Sleep(200 * time.Millisecond)
 		return time.Unix(1, 0), nil
 	}
@@ -62,5 +71,10 @@ func TestNTPProviderBranches(t *testing.T) {
 	defer stop()
 	if _, err := provider.GetTime(short); err == nil {
 		t.Fatal("query ignored deadline")
+	}
+	select {
+	case <-queryDone:
+	case <-time.After(time.Second):
+		t.Fatal("timed-out query goroutine did not finish")
 	}
 }
